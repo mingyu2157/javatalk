@@ -1,4 +1,4 @@
-package server;
+package Server;
 
 import java.io.*;
 import java.net.*;
@@ -76,11 +76,25 @@ public class ServerEx {
             } catch (IOException e) {
                 System.out.println(name + " 연결 종료: " + e.getMessage());
             } finally {
-                leaveRoom();
+                // 연결 종료 및 자원 정리
+                leaveRoom(); // 채팅방에서 제거
                 try {
-                    socket.close();
+                    if (socket != null && !socket.isClosed()) {
+                        socket.close(); // 소켓 닫기
+                    }
                 } catch (IOException e) {
-                    e.printStackTrace();
+                    System.out.println("소켓 닫는 중 오류 발생: " + e.getMessage());
+                }
+
+                try {
+                    if (in != null) {
+                        in.close(); // 입력 스트림 닫기
+                    }
+                    if (out != null) {
+                        out.close(); // 출력 스트림 닫기
+                    }
+                } catch (IOException e) {
+                    System.out.println("스트림 닫는 중 오류 발생: " + e.getMessage());
                 }
             }
         }
