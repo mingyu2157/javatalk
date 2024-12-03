@@ -5,11 +5,11 @@ import java.net.*;
 import java.util.*;
 
 public class ServerEx {
-    private static Map<String, Set<ClientHandler>> rooms = new HashMap<>();
-    private static Queue<ClientHandler> randomQueue = new LinkedList<>();
+    private static Map<String, Set<ClientHandler>> rooms = new HashMap<>(); // 채팅방 목록
+    private static Queue<ClientHandler> randomQueue = new LinkedList<>(); // 랜덤 채팅 대기열
 
     public static void main(String[] args) {
-        int port = 9999; // 고정 포트
+        int port = 9999;
         try (ServerSocket serverSocket = new ServerSocket(port)) {
             System.out.println("서버 실행 중입니다. 포트: " + port);
             while (true) {
@@ -23,7 +23,7 @@ public class ServerEx {
 
     private static class ClientHandler extends Thread {
         private Socket socket;
-        private String name;
+        private String userName;
         private String roomName;
         private BufferedReader in;
         private PrintWriter out;
@@ -38,133 +38,196 @@ public class ServerEx {
                 out = new PrintWriter(new OutputStreamWriter(socket.getOutputStream(), "UTF-8"), true);
 
                 // 사용자 이름 입력
-                out.println("이름을 입력하세요:");
-                name = in.readLine();
-                if (name == null || name.trim().isEmpty()) {
-                    name = "익명";
+                userName = in.readLine();
+                if (userName == null || userName.trim().isEmpty()) {
+                    userName = "익명";
                 }
+                System.out.println(userName + "님이 연결되었습니다.");
 
-                while (true) {
-                    out.println("1. 채팅방 접속 | 2. 랜덤 채팅");
-                    String choice = in.readLine();
-                    if (choice == null || choice.trim().isEmpty()) {
-                        continue;
-                    }
+                // 채팅방 목록 전송
+                sendRoomList();
 
-                    if (choice.equals("1")) {
-                        out.println("채팅방 이름을 입력하세요:");
-                        roomName = in.readLine();
-                        if (roomName != null && !roomName.trim().isEmpty()) {
-                            joinRoom(roomName);
-                            break;
-                        }
-                    } else if (choice.equals("2")) {
+                String command;
+                while ((command = in.readLine()) != null) {
+                    if (command.startsWith("JOIN ")) {
+                        joinRoom(command.substring(5).trim());
+                    } else if (command.equals("RANDOM")) {
                         handleRandomChat();
-                        return;
+                    } else if (command.equals("BACK")) {
+                        roomName = null;
+                        sendRoomList();
+                    } else if (command.startsWith("LEAVE ")) {
+                        leaveRoom(command.substring(6).trim());
+                        sendRoomList();
+                    } else {
+                        broadcast(command);
                     }
-                }
-
-                // 방에서 메시지 처리
-                String message;
-                while ((message = in.readLine()) != null) {
-                    if (message.equalsIgnoreCase("bye")) {
-                        leaveRoom();
-                        break;
-                    }
-                    broadcast(message);
                 }
             } catch (IOException e) {
-                System.out.println(name + " 연결 종료: " + e.getMessage());
+                System.out.println(userName + " 연결 종료: " + e.getMessage());
             } finally {
-                // 연결 종료 및 자원 정리
-                leaveRoom(); // 채팅방에서 제거
-                try {
-                    if (socket != null && !socket.isClosed()) {
-                        socket.close(); // 소켓 닫기
-                    }
-                } catch (IOException e) {
-                    System.out.println("소켓 닫는 중 오류 발생: " + e.getMessage());
-                }
+                leaveRoom(roomName);
+                closeResources();
+            }
+        }
 
-                try {
-                    if (in != null) {
-                        in.close(); // 입력 스트림 닫기
+        private void sendRoomList() {
+            synchronized (rooms) {
+                out.println("왕따입니다.");
+                for (String room : rooms.keySet()) {
+                    if (rooms.get(room).contains(this)) {
+                        out.println(room);
                     }
-                    if (out != null) {
-                        out.close(); // 출력 스트림 닫기
+                }
+                out.println("END");
+            }
+        }
+
+        private void joinRoom(String roomName) {
+            synchronized (rooms) {
+                this.roomName = roomName;
+                rooms.putIfAbsent(roomName, new HashSet<>());
+                rooms.get(roomName).add(this);
+            }
+            broadcast("[알림] " + userName + "님이 입장하셨습니다.");
+        }
+
+        private void leaveRoom(String roomName) {
+            if (roomName != null) {
+                System.out.println("[DEBUG] " + userName + "님이 " + roomName + " 방을 나가려고 합니다.");
+                synchronized (rooms) {
+                    Set<ClientHandler> room = rooms.get(roomName);
+                    if (room != null) {
+                        room.remove(this);
+                        System.out.println("[DEBUG] " + userName + "님이 " + roomName + " 방에서 제거되었습니다.");
+                        if (room.isEmpty()) {
+                            rooms.remove(roomName);
+                            System.out.println("[DEBUG] 방이 비어 삭제되었습니다: " + roomName);
+                        } else {
+                            broadcast("[알림] " + userName + "님이 퇴장하셨습니다.");
+                        }
+                    } else {
+                        System.out.println("[DEBUG] 방을 찾을 수 없습니다: " + roomName);
                     }
-                } catch (IOException e) {
-                    System.out.println("스트림 닫는 중 오류 발생: " + e.getMessage());
+                }
+                this.roomName = null; // 현재 방 이름 초기화
+                System.out.println("[DEBUG] 현재 방 이름 초기화 완료: " + userName);
+            } else {
+                System.out.println("[DEBUG] roomName이 null입니다. 아무 작업도 수행되지 않았습니다.");
+            }
+        }
+
+        
+        private void broadcast(String message) {
+            synchronized (rooms) {
+                System.out.println("[디버깅] 방송 시작: " + message); // 방송 시작 확인
+                Set<ClientHandler> room = rooms.get(roomName);
+                if (room != null) {
+                    for (ClientHandler client : room) {
+                        client.out.println(userName + ": " + message);
+                        System.out.println("[디버깅] 전송 대상: " + client.userName); // 대상 클라이언트 확인
+                    }
+                } else {
+                    System.out.println("[디버깅] 방이 존재하지 않음: " + roomName); // 방 상태 확인
                 }
             }
         }
 
         private void handleRandomChat() throws IOException {
+            System.out.println("[DEBUG] 랜덤 채팅 요청: " + userName);
+            ClientHandler partner = null;
+
             synchronized (randomQueue) {
                 if (randomQueue.isEmpty()) {
                     randomQueue.add(this);
-                    out.println("랜덤 채팅 대기 중입니다...");
+                    System.out.println("[DEBUG] 대기열에 추가: " + userName);
+                    out.println("[알림] 랜덤 채팅 대기 중...");
                     while (randomQueue.contains(this)) {
                         try {
                             randomQueue.wait();
                         } catch (InterruptedException ignored) {}
                     }
                 } else {
-                    ClientHandler partner = randomQueue.poll();
+                    partner = randomQueue.poll();
+                    System.out.println("[DEBUG] 매칭 성공: " + userName + " <-> " + partner.userName);
                     randomQueue.notifyAll();
-                    out.println("랜덤 채팅 연결 완료!");
-                    partner.out.println("랜덤 채팅 연결 완료!");
+
+                    // 랜덤 채팅방 이름 생성 및 설정
+                    String randomRoomName = "RandomRoom-" + UUID.randomUUID().toString().substring(0, 8);
+                    synchronized (rooms) {
+                        rooms.put(randomRoomName, new HashSet<>());
+                        rooms.get(randomRoomName).add(this);
+                        rooms.get(randomRoomName).add(partner);
+                    }
+
+                    this.roomName = randomRoomName;
+                    partner.roomName = randomRoomName;
+
+                    out.println("[알림] 랜덤 채팅이 생성되었습니다! 방 이름: " + randomRoomName);
+                    partner.out.println("[알림] 랜덤 채팅이 생성되었습니다! 방 이름: " + randomRoomName);
+
+                    // 매칭된 클라이언트와 채팅 시작
                     handleDirectChat(partner);
                 }
             }
         }
 
-        private void handleDirectChat(ClientHandler partner) throws IOException {
-            String message;
-            while ((message = in.readLine()) != null) {
-                if (message.equalsIgnoreCase("bye")) {
-                    out.println("랜덤 채팅 종료");
-                    partner.out.println("랜덤 채팅 종료");
-                    break;
-                }
-                partner.out.println(name + ": " + message);
-                out.println("나: " + message);
-            }
-        }
+        private void handleDirectChat(ClientHandler partner) {
+            System.out.println("[DEBUG] 랜덤 채팅 시작: " + userName + " <-> " + partner.userName);
 
-        private void joinRoom(String roomName) {
-            synchronized (rooms) {
-                rooms.putIfAbsent(roomName, new HashSet<>());
-                rooms.get(roomName).add(this);
-            }
-            broadcast("[알림] " + name + "님이 입장하셨습니다.");
-        }
-
-        private void leaveRoom() {
-            if (roomName != null) {
-                synchronized (rooms) {
-                    Set<ClientHandler> room = rooms.get(roomName);
-                    if (room != null) {
-                        room.remove(this);
-                        if (room.isEmpty()) {
-                            rooms.remove(roomName);
-                        } else {
-                            broadcast("[알림] " + name + "님이 퇴장하셨습니다.");
+            Thread currentChatThread = new Thread(() -> {
+                try {
+                    String message;
+                    while ((message = in.readLine()) != null) {
+                        System.out.println("[DEBUG] " + userName + " 메시지: " + message);
+                        if (message.equalsIgnoreCase("bye")) {
+                            out.println("[알림] 랜덤 채팅 종료.");
+                            partner.out.println("[알림] 상대방이 랜덤 채팅을 종료했습니다.");
+                            break;
                         }
+                        partner.out.println(userName + ": " + message);
+                        partner.out.flush();
                     }
+                } catch (IOException e) {
+                    System.out.println("[ERROR] " + userName + " 랜덤 채팅 중 연결 문제가 발생했습니다: " + e.getMessage());
                 }
-            }
+            });
+
+            Thread partnerChatThread = new Thread(() -> {
+                try {
+                    String partnerMessage;
+                    while ((partnerMessage = partner.in.readLine()) != null) {
+                        System.out.println("[DEBUG] " + partner.userName + " 메시지: " + partnerMessage);
+                        if (partnerMessage.equalsIgnoreCase("bye")) {
+                            partner.out.println("[알림] 랜덤 채팅 종료.");
+                            out.println("[알림] 상대방이 랜덤 채팅을 종료했습니다.");
+                            break;
+                        }
+                        out.println(partner.userName + ": " + partnerMessage);
+                        out.flush();
+                    }
+                } catch (IOException e) {
+                    System.out.println("[ERROR] " + partner.userName + " 랜덤 채팅 중 연결 문제가 발생했습니다: " + e.getMessage());
+                }
+            });
+
+            currentChatThread.start();
+            partnerChatThread.start();
         }
 
-        private void broadcast(String message) {
-            synchronized (rooms) {
-                Set<ClientHandler> room = rooms.get(roomName);
-                if (room != null) {
-                    for (ClientHandler client : room) {
-                        client.out.println(name + ": " + message);
-                        client.out.flush();
-                    }
+        private void closeResources() {
+            try {
+                if (socket != null && !socket.isClosed()) {
+                    socket.close();
                 }
+                if (in != null) {
+                    in.close();
+                }
+                if (out != null) {
+                    out.close();
+                }
+            } catch (IOException e) {
+                System.out.println("자원 해제 중 오류: " + e.getMessage());
             }
         }
     }
