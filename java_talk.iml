@@ -7,5 +7,16 @@
     </content>
     <orderEntry type="inheritedJdk" />
     <orderEntry type="sourceFolder" forTests="false" />
+    <orderEntry type="module-library">
+      <library name="BCrypt">
+        <CLASSES />
+        <JAVADOC />
+        <SOURCES>
+          <root url="jar://$USER_HOME$/Downloads/jBCrypt-master.zip!/jBCrypt-master/src" />
+          <root url="jar://$USER_HOME$/Downloads/jBCrypt-master.zip!/jBCrypt-master/test" />
+        </SOURCES>
+      </library>
+    </orderEntry>
+    <orderEntry type="library" name="mysql-connector-j-9.1" level="project" />
   </component>
 </module>

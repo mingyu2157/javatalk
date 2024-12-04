@@ -37,11 +37,6 @@ public class ServerEx {
                 in = new BufferedReader(new InputStreamReader(socket.getInputStream(), "UTF-8"));
                 out = new PrintWriter(new OutputStreamWriter(socket.getOutputStream(), "UTF-8"), true);
 
-                // 사용자 이름 입력
-                userName = in.readLine();
-                if (userName == null || userName.trim().isEmpty()) {
-                    userName = "익명";
-                }
                 System.out.println(userName + "님이 연결되었습니다.");
 
                 // 채팅방 목록 전송

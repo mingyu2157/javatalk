@@ -14,18 +14,16 @@ public class ClientEx {
     private JTextArea messageArea = new JTextArea(20, 60);
     private JTextField inputField = new JTextField(50);
     private String currentRoom = "";
+    private String userName;
 
-    public ClientEx() {
+    public ClientEx(String userName) {
+        this.userName = userName;
+
         try {
             Socket socket = new Socket("localhost", 9999);
             in = new BufferedReader(new InputStreamReader(socket.getInputStream(), "UTF-8"));
             out = new PrintWriter(new OutputStreamWriter(socket.getOutputStream(), "UTF-8"), true);
 
-            // 사용자 이름 입력
-            String userName = JOptionPane.showInputDialog(frame, "이름을 입력하세요:", "이름 설정", JOptionPane.PLAIN_MESSAGE);
-            if (userName == null || userName.trim().isEmpty()) {
-                userName = "익명";
-            }
             out.println(userName);
 
             showRoomSelection();
@@ -148,6 +146,7 @@ public class ClientEx {
     }
 
     public static void main(String[] args) {
-        SwingUtilities.invokeLater(ClientEx::new);
+//        SwingUtilities.invokeLater(() -> new ClientEx("테스트 사용자"));
+        SwingUtilities.invokeLater(() -> new LoginScreen().createAndShowGUI()); // LoginScreen 실행
     }
 }
