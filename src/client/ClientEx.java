@@ -15,12 +15,16 @@ public class ClientEx {
     private JTextField inputField = new JTextField(50);
     private String currentRoom = "";
     private String userName;
+    private static Socket socket; // 인스턴스 변수로 Socket 선언
 
     public ClientEx(String userName) {
         this.userName = userName;
 
         try {
-            Socket socket = new Socket("localhost", 9999);
+            // 전역 Socket 객체 초기화
+            if (socket == null || socket.isClosed()) {
+                socket = new Socket("localhost", 9999); // 서버 주소와 포트
+            }
             in = new BufferedReader(new InputStreamReader(socket.getInputStream(), "UTF-8"));
             out = new PrintWriter(new OutputStreamWriter(socket.getOutputStream(), "UTF-8"), true);
 
@@ -51,6 +55,9 @@ public class ClientEx {
         } catch (IOException e) {
             JOptionPane.showMessageDialog(frame, "서버에 연결할 수 없습니다.");
         }
+    }
+    public static Socket getSocket() {
+        return socket;
     }
 
     private void showRoomSelection() {
@@ -127,6 +134,7 @@ public class ClientEx {
 
         backButton.addActionListener(e -> {
             out.println("BACK");
+            currentRoom = "";
             showRoomSelection();
         });
 

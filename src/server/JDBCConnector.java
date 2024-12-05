@@ -8,21 +8,39 @@ public class JDBCConnector {
     private static final String USER = "root";
     private static final String PASSWORD = "0000"; // MySQL 비밀번호 입력
 
-    public static Connection getConnection() throws SQLException {
-        return DriverManager.getConnection(URL, USER, PASSWORD);
+    public static Connection getConnection() {
+        try {
+            Connection conn = DriverManager.getConnection(URL, USER, PASSWORD);
+            System.out.println("[DEBUG] 데이터베이스 연결 성공: " + conn);
+            return conn;
+        } catch (SQLException e) {
+            System.out.println("[ERROR] 데이터베이스 연결 실패: " + e.getMessage());
+            e.printStackTrace(); // 상세 오류 출력
+            return null; // 실패 시 null 반환
+        }
     }
+
 
     public boolean registerUser(String userName, String password) {
         String hashedPassword = BCrypt.hashpw(password, BCrypt.gensalt()); // 비밀번호 해싱
         String query = "INSERT INTO users (userName, password) VALUES (?, ?)";
+
         try (Connection conn = getConnection(); PreparedStatement stmt = conn.prepareStatement(query)) {
+            System.out.println("[DEBUG] 연결 성공: " + conn); // 연결 확인
+            System.out.println("[DEBUG] 실행할 쿼리: " + query);
+            System.out.println("[DEBUG] userName: " + userName);
+            System.out.println("[DEBUG] hashedPassword: " + hashedPassword);
+
             stmt.setString(1, userName);
             stmt.setString(2, hashedPassword);
             stmt.executeUpdate();
+
+            System.out.println("[DEBUG] 회원가입 성공: " + userName);
             return true;
         } catch (SQLIntegrityConstraintViolationException e) {
-            System.out.println("Error: Username already exists.");
+            System.out.println("[ERROR] 중복된 사용자 이름: " + userName);
         } catch (SQLException e) {
+            System.out.println("[ERROR] SQL 오류: " + e.getMessage());
             e.printStackTrace();
         }
         return false;
