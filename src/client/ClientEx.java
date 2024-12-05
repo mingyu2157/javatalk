@@ -45,13 +45,22 @@ public class ClientEx {
                 try {
                     String message;
                     while ((message = in.readLine()) != null) {
-                        messageArea.append(message + "\n");
+                        System.out.println("[채팅내역을 서버로부터 받는 디버그] 서버로부터 수신한 메시지: " + message);
+                        String finalMessage = message;
+                        SwingUtilities.invokeLater(() -> {
+                            if (finalMessage.equals("=========================")) {
+//                                messageArea.append("[여기까지 읽었습니다.]\n");
+                            } else {
+                                messageArea.append(finalMessage + "\n");
+                            }
+                            System.out.println("[DEBUG] messageArea 업데이트 완료"); // 업데이트 확인
+                        });
                     }
                 } catch (IOException e) {
+                    System.out.println("[ERROR] 메시지 수신 중 오류: " + e.getMessage());
                     e.printStackTrace();
                 }
             }).start();
-
         } catch (IOException e) {
             JOptionPane.showMessageDialog(frame, "서버에 연결할 수 없습니다.");
         }
@@ -61,6 +70,7 @@ public class ClientEx {
     }
 
     private void showRoomSelection() {
+        frame.setTitle("채팅방 목록");
         try {
             List<String> roomNames = new ArrayList<>();
             String line;
@@ -125,7 +135,7 @@ public class ClientEx {
     private void openChatWindow(String roomName) {
         frame.setTitle(roomName);
         frame.getContentPane().removeAll();
-        messageArea.setText(""); // 메시지 초기화
+        messageArea.setText("");
         frame.getContentPane().add(new JScrollPane(messageArea), BorderLayout.CENTER);
 
         JPanel bottomPanel = new JPanel(new BorderLayout());
@@ -154,7 +164,7 @@ public class ClientEx {
     }
 
     public static void main(String[] args) {
-//        SwingUtilities.invokeLater(() -> new ClientEx("테스트 사용자"));
-        SwingUtilities.invokeLater(() -> new LoginScreen().createAndShowGUI()); // LoginScreen 실행
+        SwingUtilities.invokeLater(() -> new ClientEx("테스트 사용자"));
+//        SwingUtilities.invokeLater(() -> new LoginScreen().createAndShowGUI()); // LoginScreen 실행
     }
 }

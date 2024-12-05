@@ -95,7 +95,7 @@ public class ServerEx {
 
         private void sendRoomList() {
             synchronized (rooms) {
-                out.println("x");
+                out.println("");
                 for (String room : rooms.keySet()) {
                     if (rooms.get(room).contains(this)) {
                         out.println(room);
@@ -126,6 +126,7 @@ public class ServerEx {
                             out.println(msg); // 클라이언트로 기록 전송
                         }
                         out.println("========================="); // 기록 종료
+                        System.out.println("[해시맵에서 내역을 가져오는 디버깅] 채팅 기록 클라이언트로 전송 완료");
                     } else {
                         out.println("[해시맵에서 내역을 가져오는 디버깅] " + roomName + " 채팅 기록 없음");
                         out.println("=========================");
