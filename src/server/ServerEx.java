@@ -49,9 +49,9 @@ public class ServerEx {
 
                 String command;
                 while ((command = in.readLine()) != null) {
-                    System.out.println("[DEBUG] 수신된 명령: " + command); // 명령 수신 디버깅
+                    System.out.println("[command 디버그] 수신된 명령: " + command); // 명령 수신 디버깅
                     if (command.startsWith("REGISTER ")) {
-                        System.out.println("[DEBUG] REGISTER 명령 처리 중...");
+                        System.out.println("[회원가입 디버그] REGISTER 명령 처리 중...");
                         String[] parts = command.substring(9).split(" ");
                         String userName = parts[0];
                         String password = parts[1];
@@ -76,7 +76,8 @@ public class ServerEx {
                     } else if (command.equals("RANDOM")) {
                         handleRandomChat();
                     } else if (command.equals("BACK")) {
-                        roomName = null;
+                        System.out.println("[DEBUG] BACK 명령 수신: " + userName);
+//                        roomName = null;
                         sendRoomList();
                     } else if (command.startsWith("LEAVE ")) {
                         leaveRoom(command.substring(6).trim());
@@ -95,13 +96,16 @@ public class ServerEx {
 
         private void sendRoomList() {
             synchronized (rooms) {
-                out.println("");
+                System.out.println("[채팅방 목록들 디버그] 현재 서버의 채팅방 목록: " + rooms.keySet());
+                out.println("ROOMS");
                 for (String room : rooms.keySet()) {
                     if (rooms.get(room).contains(this)) {
-                        out.println(room);
+                        out.println(room); //클라이언트로 채팅방 목록 보내기
+                        System.out.println("[채팅방 목록들 디버그] 클라이언트로 전송된 채팅방: " + room);
                     }
                 }
                 out.println("END");
+                System.out.println("[채팅방 목록들 디버그] END 클라이언트로 전송 성공");
             }
         }
 
@@ -122,14 +126,15 @@ public class ServerEx {
                     System.out.println("[해시맵에서 내역을 가져오는 디버깅] " + roomName + " 채팅 기록 전송 준비");
                     if (history != null) {
                         for (String msg : history) {
-                            System.out.println("[해시맵에서 내역을 가져오는 디버깅] 전송 메시지: " + msg); // 전송할 메시지 디버깅
                             out.println(msg); // 클라이언트로 기록 전송
+                            System.out.println("[해시맵에서 내역을 가져오는 디버깅] 전송 메시지: " + msg); // 전송할 메시지 디버깅
                         }
                         out.println("========================="); // 기록 종료
                         System.out.println("[해시맵에서 내역을 가져오는 디버깅] 채팅 기록 클라이언트로 전송 완료");
                     } else {
-                        out.println("[해시맵에서 내역을 가져오는 디버깅] " + roomName + " 채팅 기록 없음");
                         out.println("=========================");
+                        out.flush(); // 데이터 즉시 전송
+                        out.println("[해시맵에서 내역을 가져오는 디버깅] " + roomName + " 채팅 기록 없음");
                     }
                 }
             }
@@ -191,7 +196,7 @@ public class ServerEx {
         }
 
         private void handleRandomChat() throws IOException {
-            System.out.println("[DEBUG] 랜덤 채팅 요청: " + userName);
+            System.out.println("[랜덤채팅기능을 위한 디버그] 랜덤 채팅 요청: " + userName);
             ClientHandler partner = null;
 
             synchronized (randomQueue) {
@@ -221,7 +226,7 @@ public class ServerEx {
                     partner.roomName = randomRoomName;
 
                     out.println("[알림] 랜덤 채팅이 생성되었습니다! 방 이름: " + randomRoomName);
-                    partner.out.println("[알림] 랜덤 채팅이 생성되었습니다! 방 이름: " + randomRoomName);
+                    partner.out.println("[알림] 랜덤 채팅이 생성되었습니다! 방 이름: " + randomRoomName + "나가면 끝입니다 주의하세요");
 
                     // 매칭된 클라이언트와 채팅 시작
                     handleDirectChat(partner);

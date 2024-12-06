@@ -139,14 +139,18 @@ public class ClientEx {
         frame.getContentPane().add(new JScrollPane(messageArea), BorderLayout.CENTER);
 
         JPanel bottomPanel = new JPanel(new BorderLayout());
-        JButton backButton = new JButton("뒤로가기");
         JButton leaveButton = new JButton("채팅방 나가기");
 
-        backButton.addActionListener(e -> {
-            out.println("BACK");
-            currentRoom = "";
-            showRoomSelection();
-        });
+        // 랜덤 채팅방에서는 뒤로가기 버튼을 표시하지 않음
+        if (!roomName.equals("랜덤채팅")) {
+            JButton backButton = new JButton("뒤로가기");
+            backButton.addActionListener(e -> {
+                out.println("BACK");
+                currentRoom = "";
+                showRoomSelection();
+            });
+            bottomPanel.add(backButton, BorderLayout.WEST);
+        }
 
         leaveButton.addActionListener(e -> {
             out.println("LEAVE " + currentRoom); // 현재 방 이름을 사용하여 LEAVE 명령 전송
@@ -154,7 +158,6 @@ public class ClientEx {
             showRoomSelection(); // 채팅방 목록 화면 표시
         });
 
-        bottomPanel.add(backButton, BorderLayout.WEST);
         bottomPanel.add(inputField, BorderLayout.CENTER);
         bottomPanel.add(leaveButton, BorderLayout.EAST);
 
