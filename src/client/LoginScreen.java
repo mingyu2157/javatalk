@@ -1,6 +1,6 @@
 package Client;
 
-import Server.JDBCConnector;
+import server.JDBCConnector;
 
 import javax.swing.*;
 import java.awt.*;
@@ -11,7 +11,7 @@ public class LoginScreen {
         SwingUtilities.invokeLater(LoginScreen::createAndShowGUI);
     }
 
-    public static void createAndShowGUI() {
+    static void createAndShowGUI() {
         JFrame frame = new JFrame("Login");
         frame.setSize(300, 200);
         frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
@@ -51,14 +51,14 @@ public class LoginScreen {
         panel.add(registerButton);
 
         loginButton.addActionListener((ActionEvent e) -> {
-            String userName = userText.getText();
+            String username = userText.getText();
             String password = new String(passwordText.getPassword());
             JDBCConnector connector = new JDBCConnector();
 
-            if (connector.loginUser(userName, password)) {
+            if (connector.loginUser(username, password)) {
                 JOptionPane.showMessageDialog(null, "Login successful!");
                 frame.dispose();
-                new ClientEx(userName); //ClientEx에 사용자 이름 전달
+                new ClientEx(username); // 채팅 클라이언트 실행
             } else {
                 JOptionPane.showMessageDialog(null, "Invalid username or password!");
             }

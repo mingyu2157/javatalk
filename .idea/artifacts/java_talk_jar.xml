@@ -3,6 +3,9 @@
     <output-path>$PROJECT_DIR$/out/artifacts/java_talk_jar</output-path>
     <root id="archive" name="java_talk.jar">
       <element id="module-output" name="java_talk" />
+      <element id="extracted-dir" path="$USER_HOME$/Downloads/jbcrypt-0.4.jar" path-in-jar="/" />
+      <element id="extracted-dir" path="$USER_HOME$/Downloads/mysql-connector-j-9.1.0/mysql-connector-j-9.1.0.jar" path-in-jar="/" />
+      <element id="library" level="module" name="BCrypt" module-name="java_talk" />
     </root>
   </artifact>
 </component>

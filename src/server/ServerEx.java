@@ -1,9 +1,10 @@
 package Server;
 
+
 import java.io.*;
 import java.net.*;
 import java.util.*;
-import Server.JDBCConnector;
+import server.JDBCConnector;
 
 public class ServerEx {
     private static Map<String, Set<ClientHandler>> rooms = new HashMap<>(); // 채팅방 목록
@@ -41,7 +42,7 @@ public class ServerEx {
 
                 // 데이터베이스 연결 확인
 //                JDBCConnector connector = new JDBCConnector();
-
+                this.userName = in.readLine(); // userName 값을 읽어서 설정
                 System.out.println(userName + "님이 연결되었습니다.");
 
                 // 채팅방 목록 전송
@@ -49,9 +50,9 @@ public class ServerEx {
 
                 String command;
                 while ((command = in.readLine()) != null) {
-                    System.out.println("[command 디버그] 수신된 명령: " + command); // 명령 수신 디버깅
+                    //System.out.println("[command 디버깅] 서버에서 읽은 command: " + command); // 명령 수신 디버깅
                     if (command.startsWith("REGISTER ")) {
-                        System.out.println("[회원가입 디버그] REGISTER 명령 처리 중...");
+                        //System.out.println("[회원가입 디버깅] REGISTER 명령 처리 중...");
                         String[] parts = command.substring(9).split(" ");
                         String userName = parts[0];
                         String password = parts[1];
@@ -61,10 +62,10 @@ public class ServerEx {
                         boolean success = connector.registerUser(userName, password);
 
                         if (success) {
-                            System.out.println("[DEBUG] 회원가입 성공: " + userName);
+                            System.out.println("[디버깅] 회원가입 성공: " + userName);
                             out.println("SUCCESS");
                         } else {
-                            System.out.println("[DEBUG] 회원가입 실패: " + userName);
+                            System.out.println("[디버깅] 회원가입 실패: " + userName);
                             out.println("FAIL");
                         }
                     } else {
@@ -76,7 +77,7 @@ public class ServerEx {
                     } else if (command.equals("RANDOM")) {
                         handleRandomChat();
                     } else if (command.equals("BACK")) {
-                        System.out.println("[DEBUG] BACK 명령 수신: " + userName);
+                        System.out.println("[디버깅] BACK 명령 수신: " + userName);
 //                        roomName = null;
                         sendRoomList();
                     } else if (command.startsWith("LEAVE ")) {
@@ -134,7 +135,7 @@ public class ServerEx {
                     } else {
                         out.println("=========================");
                         out.flush(); // 데이터 즉시 전송
-                        out.println("[해시맵에서 내역을 가져오는 디버깅] " + roomName + " 채팅 기록 없음");
+//                        out.println("[해시맵에서 내역을 가져오는 디버깅] " + roomName + " 채팅 기록 없음");
                     }
                 }
             }
@@ -165,7 +166,6 @@ public class ServerEx {
                 System.out.println("[리브룸] roomName이 null입니다. 아무 작업도 수행되지 않았습니다.");
             }
         }
-
 
         private void broadcast(String message) {
             synchronized (rooms) {
